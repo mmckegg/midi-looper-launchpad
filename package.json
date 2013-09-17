@@ -1,0 +1,24 @@
+{
+  "name": "midi-looper-launchpad",
+  "version": "0.0.0",
+  "description": "Launchpad control for midi-looper",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mmckegg/midi-looper-launchpad.git"
+  },
+  "keywords": [
+    "midi",
+    "looper",
+    "launchpad"
+  ],
+  "dependencies": {
+    "through": "~2.3.4",
+    "midi-controller": "*"
+  },
+  "author": "Matt McKegg",
+  "license": "MIT"
+}
