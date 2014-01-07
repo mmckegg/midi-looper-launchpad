@@ -78,47 +78,41 @@ module.exports = function(duplexPort, looper){
   var snapper2 = Snapper(noteMatrix, looper)
   var holder = Holder(looper)
 
-  var transformCount = 0
 
   var snap1Button = controller.createButton([176, 109], function(){
     this.turnOn(stateLights.yellow)
     snapper1.play()
-    transformCount += 1
   }, function(){
     this.turnOff()
     snapper1.stop()
-    transformCount -= 1
   })
   var snap2Button = controller.createButton([176, 110], function(){
     this.turnOn(stateLights.yellow)
     snapper2.play()
-    transformCount += 1
   }, function(){
     this.turnOff()
     snapper2.stop()
-    transformCount -= 1
   })
-
-  var mover = Mover([
-    [noteMatrix, looper],
-    [snap1Button, snapper1],
-    [snap2Button, snapper2]
-  ], stateLights.green)
 
   var learnButton = controller.createButton([176, 104], function(){
     this.flash(stateLights.green)
-    if (transformCount){
+    if (looper.getTransformCount()){
+      looper.bounce()
+    } else if (mover.getSelection() && !mover.getTargetSelection()){
+      var grid = repeater.getRepeat() || 1/4
+      looper.transform('quantize', grid, mover.getSelection())
       looper.bounce()
     } else {
       looper.store()
     }
   })
 
+  var releaseShift = []
+  var releaseSuppress = []
+
   var lastMovePress = 0
+
   var moveButton = controller.createButton([176, 111], function(){
-    this.turnOn(stateLights.green)
-    mover.start()
-    transformCount += 1
     if (lastMovePress > Date.now() - 500){
       this.turnOn(stateLights.amber)
       mover.start('copy')
@@ -126,21 +120,50 @@ module.exports = function(duplexPort, looper){
       this.turnOn(stateLights.green)
       mover.start()
     }
+    beginShift()
     lastMovePress = Date.now()
   }, function(){
     this.turnOff()
     mover.stop()
-    transformCount -= 1
+    endShift()
   })
+
+  function beginShift(){
+    releaseShift.push(undoButton.grab(function(){
+      this.flash(stateLights.green, 200)
+      learnButton.flash(stateLights.green, 100)
+      looper.setLength((looper.getLength()||1) / 2, currentPosition)
+    }))
+    releaseShift.push(redoButton.grab(function(){
+      this.flash(stateLights.green, 200)
+      learnButton.flash(stateLights.green, 100)
+      looper.setLength((looper.getLength()||1) * 2, currentPosition)
+    }))
+    releaseShift.push(suppressButton.grab(function(){
+      var notesToSuppress = mover.getTargetSelection() || mover.getSelection()
+      releaseSuppress = notesToSuppress.map(function(note){
+        return noteMatrix.getButton(note).light(stateLights.red)
+      })
+      releaseSuppress.push(looper.transform('suppress', notesToSuppress))
+    }, function(){
+      releaseSuppress.forEach(invoke)
+      releaseSuppress = []
+    }))
+  }
+
+  function endShift(){
+    releaseShift.forEach(invoke)
+    releaseShift = []
+    releaseSuppress.forEach(invoke)
+    releaseSuppress = []
+  }
 
   var suppressButton = controller.createButton([176, 105], function(){
     this.turnOn(stateLights.red)
     suppressor.start()
-    transformCount += 1
   }, function(){
     this.turnOff()
     suppressor.stop()
-    transformCount -= 1
   })
 
   var holdButton = controller.createButton([176, 108], function(){
@@ -166,6 +189,12 @@ module.exports = function(duplexPort, looper){
     this.turnOn(stateLights.amberLow)
     repeater.stop()
   })
+
+  var mover = Mover([
+    [noteMatrix, looper],
+    [snap1Button, snapper1],
+    [snap2Button, snapper2]
+  ], stateLights.green)
 
   function clearRepeat(){
     clearRepeatButton.turnOff()
@@ -226,4 +255,8 @@ function generateNoteGrid(message, offset){
   }
 
   return result
+}
+
+function invoke(func){
+  func()
 }
