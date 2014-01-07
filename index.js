@@ -45,7 +45,7 @@ module.exports = function(duplexPort, looper){
 
   // wire up buttonMatrix
   var noteMatrix = controller.createNoteMatrix(generateNoteGrid(144, 0), stateLights.amber)
-  looper.pipe(noteMatrix).on('data', function(data){
+  looper.recorder.pipe(noteMatrix).on('data', function(data){
     control.queue(data)
   })
 
