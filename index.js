@@ -80,10 +80,19 @@ module.exports = function(duplexPort, looper){
     }
   })
 
+  var lastMovePress = 0
   var moveButton = controller.createButton([176, 111], function(){
     this.turnOn(stateLights.green)
     mover.start()
     transformCount += 1
+    if (lastMovePress > Date.now() - 500){
+      this.turnOn(stateLights.amber)
+      mover.start('copy')
+    } else {
+      this.turnOn(stateLights.green)
+      mover.start()
+    }
+    lastMovePress = Date.now()
   }, function(){
     this.turnOff()
     mover.stop()
