@@ -13,9 +13,32 @@ module.exports = function(duplexPort, looper){
   duplexPort.write([176, 0, 0])
 
   var repeatStates = [1, 2/3, 1/2, 1/3, 1/4, 1/6, 1/8]
+  var recordingNotes = []
+  var activeNotes = {}
+  var currentPosition = 0
   
   var control = Through(function(schedule){
     // bopper data
+    var repeatLength = holder.getLength()
+    var currentRepeat = Math.floor(schedule.to / repeatLength) * repeatLength
+
+    var step = looper.getLength() / 8
+    var currentBeat = Math.floor(schedule.to / step) * step
+
+    if (currentBeat > schedule.from && currentBeat <= schedule.to){
+      setDisplayPosition(currentBeat / step % 8)
+    }
+
+    if (currentRepeat > schedule.from && currentRepeat <= schedule.to){
+      holdButton.flash(stateLights.green, 20)
+    }
+
+    var position = schedule.to - looper.getLength()
+    var currentNotes = recordingNotes
+    currentPosition = schedule.to
+    recordingNotes = looper.recorder.getActiveNotes(position, looper.getLength())
+    diff(recordingNotes, currentNotes).forEach(refreshButtonState)
+    diff(currentNotes, recordingNotes).forEach(refreshButtonState)
   })
 
   var controller = Controller(duplexPort)
@@ -27,15 +50,23 @@ module.exports = function(duplexPort, looper){
   })
 
   looper.on('noteState', function(note, state){
-    var button = noteMatrix.getButton(note)
-    if (button && state){
-      if (state == 'active'){
+    var key = note[0] + '/' + note[1]
+    activeNotes[key] = state === 'active'
+    refreshButtonState(key)
+  })
+
+  function refreshButtonState(key){
+    var button = noteMatrix.getButton(key)
+    if (button){
+      if (activeNotes[key]){
         button.setOff(stateLights.greenLow)
+      } else if (~recordingNotes.indexOf(key)){
+        button.setOff(stateLights.redLow)
       } else {
         button.setOff(stateLights.off)
       }
     }
-  })
+  }
 
   // transform
   var suppressor = Suppressor(noteMatrix, looper, stateLights.red)
@@ -152,11 +183,29 @@ module.exports = function(duplexPort, looper){
     })
   })
 
+  var sideButtons = [clearRepeatButton].concat(repeatButtons)
+
+  var lastDisplayPosition = -1
+  function setDisplayPosition(position){
+    var lastButton = sideButtons[lastDisplayPosition]
+    var button = sideButtons[position]
+    if (lastButton){
+      lastButton.setOff(stateLights.off)
+    }
+    if (button){
+      button.flash(stateLights.green)
+      button.setOff(stateLights.greenLow)
+    }
+    lastDisplayPosition = position
+  }
+
   return control
 }
 
 
-
+function diff(ary1, ary2){
+  return ary1.filter(function(i) {return !(ary2.indexOf(i) > -1);});
+}
 
 
 function generateNoteGrid(message, offset){
