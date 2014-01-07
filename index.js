@@ -49,6 +49,9 @@ module.exports = function(duplexPort, looper){
     control.queue(data)
   })
 
+  control.noteMatrix = noteMatrix
+  control.stateLights = stateLights
+
   looper.on('noteState', function(note, state){
     var key = note[0] + '/' + note[1]
     activeNotes[key] = state === 'active'
