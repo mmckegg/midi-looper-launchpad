@@ -1,6 +1,6 @@
 {
   "name": "midi-looper-launchpad",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Launchpad control bindings for midi-looper",
   "main": "index.js",
   "scripts": {
