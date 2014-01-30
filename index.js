@@ -10,6 +10,8 @@ var Holder = require('./lib/holder')
 var stateLights = require('./lib/state_lights')
 
 module.exports = function(duplexPort, looper){
+
+  // clear lights
   duplexPort.write([176, 0, 0])
 
   var repeatStates = [1, 2/3, 1/2, 1/3, 1/4, 1/6, 1/8]
