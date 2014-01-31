@@ -30,6 +30,7 @@ var clock = Bopper(audioContext)
 var playback = Ditty(clock)
 var looper = MidiLooper(clock.getPosition)
 var soundbank = Soundbank(audioContext)
+playback.pipe(soundbank).pipe(looper).pipe(playback)
 
 // get a duplex stream for the launchpad
 var midiStream = WebMidi('Launchpad', 0)
@@ -37,8 +38,11 @@ var midiStream = WebMidi('Launchpad', 0)
 // pass the duplex midi stream and looper instance to the constructor
 var launchpad = LaunchpadControl(midiStream, looper)
 
-// now wire up the looper feedback loop!
-playback.pipe(soundbank).pipe(looper).pipe(playback)
+// feed a clock into the launchpad for visual metro
+clock.pipe(launchpad)
+
+// pipe out raw midi notes
+launchpad.pipe(soundbank)
 ```
 
 ## Usage
