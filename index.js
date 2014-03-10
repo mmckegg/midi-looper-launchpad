@@ -18,6 +18,7 @@ module.exports = function(duplexPort, looper){
   var recordingNotes = []
   var activeNotes = {}
   var currentPosition = 0
+  var isSelecting = false
   
   var control = Through(function(schedule){
     // bopper data
@@ -100,12 +101,19 @@ module.exports = function(duplexPort, looper){
     this.flash(stateLights.green)
     if (looper.getTransformCount()){
       looper.bounce()
-    } else if (mover.getSelection() && !mover.getTargetSelection()){
+      if (!mover.getTargetSelection()){
+        mover.clear()
+        endMove()
+      }
+    } else if (isSelecting && mover.getSelection() && !mover.getTargetSelection()){
+      //HACK: need to find a better control for quantize
+      // this button combination doesn't really make sense now that the move button changed behavior
       var grid = repeater.getRepeat() || 1/4
       looper.transform('quantize', grid, mover.getSelection())
       looper.bounce()
     } else {
       looper.store()
+      mover.clear()
     }
   })
 
@@ -115,6 +123,7 @@ module.exports = function(duplexPort, looper){
   var lastMovePress = 0
 
   var moveButton = controller.createButton([176, 111], function(){
+    endMove()
     if (lastMovePress > Date.now() - 500){
       this.turnOn(stateLights.amber)
       mover.start('copy')
@@ -124,9 +133,14 @@ module.exports = function(duplexPort, looper){
     }
     beginShift()
     lastMovePress = Date.now()
+    isSelecting = true
+
   }, function(){
-    this.turnOff()
-    mover.stop()
+    if (!mover.beginMove()){
+      this.turnOff()
+      endMove()
+    }
+    isSelecting = false
     endShift()
   })
 
@@ -141,21 +155,26 @@ module.exports = function(duplexPort, looper){
       learnButton.flash(stateLights.green, 100)
       looper.setLength((looper.getLength()||1) * 2, currentPosition)
     }))
-    releaseShift.push(suppressButton.grab(function(){
+
+    releaseSuppress.push(suppressButton.grab(function(){
       var notesToSuppress = mover.getTargetSelection() || mover.getSelection()
-      releaseSuppress = notesToSuppress.map(function(note){
-        return noteMatrix.getButton(note).light(stateLights.red)
+      notesToSuppress && notesToSuppress.forEach(function(note){
+        releaseSuppress.push(noteMatrix.getButton(note).light(stateLights.red))
       })
       releaseSuppress.push(looper.transform('suppress', notesToSuppress))
     }, function(){
       releaseSuppress.forEach(invoke)
       releaseSuppress = []
     }))
+
   }
 
   function endShift(){
     releaseShift.forEach(invoke)
     releaseShift = []
+  }
+
+  function endMove(){
     releaseSuppress.forEach(invoke)
     releaseSuppress = []
   }

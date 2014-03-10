@@ -75,10 +75,9 @@ Hold the **fx/user 1** and **user/user 2** buttons to playback the notes stored 
 
 ### Move/Copy/Select
 
-While holding the **mixer** button, select a note or range of notes (hold down two buttons at the same time to get all notes in between), then any of the following:
-  - press another note to move the notes to a new grid position
+While holding the **mixer** button, select a note or range of notes (hold down two buttons at the same time to get all notes in between), then release **mixer** button. With the selection do any of the following.
+  - hold another note to move the notes to a new grid position
   - hold the supress button to mute notes in the selected range
-  - press the store (learn) button to quantize to grid specified by note repeat length
   - snap 1 or 2 to store the range for triggering later by holding down the snap buttons.
 
 ## I'll get some pictures and a video up soon
