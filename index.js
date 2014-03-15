@@ -218,6 +218,7 @@ module.exports = function(duplexPort, looper){
   ], stateLights.green)
 
   function clearRepeat(){
+    holder.setLength(2/1)
     clearRepeatButton.turnOff()
     repeatButtons.forEach(function(button){
       button.turnOff()
