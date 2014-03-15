@@ -112,7 +112,7 @@ module.exports = function(duplexPort, looper){
       looper.transform('quantize', grid, mover.getSelection())
       looper.bounce()
     } else {
-      looper.store()
+      looper.store(null, 0.01)
       mover.clear()
     }
   })
