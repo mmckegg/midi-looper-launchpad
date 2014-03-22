@@ -42,6 +42,7 @@ module.exports = function(duplexPort, looper){
     recordingNotes = looper.recorder.getActiveNotes(position, looper.getLength())
     diff(recordingNotes, currentNotes).forEach(refreshButtonState)
     diff(currentNotes, recordingNotes).forEach(refreshButtonState)
+    refreshLearnButton()
   })
 
   var controller = Controller(duplexPort)
@@ -74,6 +75,21 @@ module.exports = function(duplexPort, looper){
     }
   }
 
+  var learnMode = 'store'
+  function refreshLearnButton(){
+    if (looper.getTransformCount()){
+      learnButton.setOff(stateLights.greenLow)
+      learnMode = 'bounce'
+    } else {
+      if (recordingNotes.length > 0){
+        learnButton.setOff(stateLights.redLow)
+      } else {
+        learnButton.setOff(stateLights.off)
+      }
+      learnMode = 'store'
+    }
+  }
+
   // transform
   var suppressor = Suppressor(noteMatrix, looper, stateLights.red)
   var repeater = Repeater(noteMatrix, looper)
@@ -99,21 +115,21 @@ module.exports = function(duplexPort, looper){
 
   var learnButton = controller.createButton([176, 104], function(){
     this.flash(stateLights.green)
-    if (looper.getTransformCount()){
+    if (learnMode === 'bounce'){
       looper.bounce()
-      if (!mover.getTargetSelection()){
-        mover.clear()
-        endMove()
-      }
-    } else if (isSelecting && mover.getSelection() && !mover.getTargetSelection()){
-      //HACK: need to find a better control for quantize
-      // this button combination doesn't really make sense now that the move button changed behavior
+    } else if (learnMode === 'quantize'){
+      //TODO: not currently used
       var grid = repeater.getRepeat() || 1/4
       looper.transform('quantize', grid, mover.getSelection())
       looper.bounce()
     } else {
       looper.store(null, 0.01)
       mover.clear()
+    }
+
+    if (!mover.getTargetSelection()){
+      mover.clear()
+      endMove()
     }
   })
 
