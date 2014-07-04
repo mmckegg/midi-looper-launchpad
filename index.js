@@ -113,6 +113,8 @@ module.exports = function(duplexPort, looper){
     snapper2.stop()
   })
 
+
+
   var learnButton = controller.createButton([176, 104], function(){
     this.flash(stateLights.green)
     if (learnMode === 'bounce'){
@@ -124,16 +126,14 @@ module.exports = function(duplexPort, looper){
       looper.bounce()
     } else {
       looper.store(null, 0.01)
-      mover.clear()
     }
 
-    if (!mover.getTargetSelection()){
-      mover.clear()
-      endMove()
-    }
+    mover.clear()
+    endMove()
   })
 
   var releaseShift = []
+  var releaseMove = []
   var releaseSuppress = []
 
   var lastMovePress = 0
@@ -141,10 +141,8 @@ module.exports = function(duplexPort, looper){
   var moveButton = controller.createButton([176, 111], function(){
     endMove()
     if (lastMovePress > Date.now() - 500){
-      this.turnOn(stateLights.amber)
       mover.start('copy')
     } else {
-      this.turnOn(stateLights.green)
       mover.start()
     }
     beginShift()
@@ -153,12 +151,13 @@ module.exports = function(duplexPort, looper){
 
   }, function(){
     if (!mover.beginMove()){
-      this.turnOff()
       endMove()
     }
     isSelecting = false
     endShift()
   })
+
+
 
   function beginShift(){
     releaseShift.push(undoButton.grab(function(){
@@ -172,7 +171,7 @@ module.exports = function(duplexPort, looper){
       looper.setLength((looper.getLength()||1) * 2, currentPosition)
     }))
 
-    releaseSuppress.push(suppressButton.grab(function(){
+    releaseMove.push(suppressButton.grab(function(){
       var notesToSuppress = mover.getTargetSelection() || mover.getSelection()
       notesToSuppress && notesToSuppress.forEach(function(note){
         releaseSuppress.push(noteMatrix.getButton(note).light(stateLights.red))
@@ -192,7 +191,9 @@ module.exports = function(duplexPort, looper){
 
   function endMove(){
     releaseSuppress.forEach(invoke)
+    releaseMove.forEach(invoke)
     releaseSuppress = []
+    releaseMove = []
   }
 
   var suppressButton = controller.createButton([176, 105], function(){
@@ -216,10 +217,15 @@ module.exports = function(duplexPort, looper){
     looper.undo()
   })
 
+  undoButton.setOff(stateLights.redLow)
+
   var redoButton = controller.createButton([176, 107], function(){
     this.flash(stateLights.red, 100)
     looper.redo()
   })
+
+  redoButton.setOff(stateLights.redLow)
+
 
   var clearRepeatButton = controller.createButton([144, 8], function(){
     clearRepeat()
@@ -232,6 +238,16 @@ module.exports = function(duplexPort, looper){
     [snap1Button, snapper1],
     [snap2Button, snapper2]
   ], stateLights.green)
+
+  mover.on('start', function(mode){
+    if (mode === 'copy'){
+      moveButton.turnOn(stateLights.amber)
+    } else {
+      moveButton.turnOn(stateLights.green)
+    }
+  }).on('clear', function(){
+    moveButton.turnOff()
+  })
 
   function clearRepeat(){
     holder.setLength(2/1)
