@@ -6,6 +6,7 @@ var Repeater = require('./lib/repeater')
 var Suppressor = require('./lib/suppressor')
 var Snapper = require('./lib/snapper')
 var Holder = require('./lib/holder')
+var Transformer = require('./lib/transformer')
 
 var stateLights = require('./lib/state_lights')
 
@@ -49,6 +50,8 @@ module.exports = function(duplexPort, looper){
 
   // wire up buttonMatrix
   var noteMatrix = controller.createNoteMatrix(generateNoteGrid(144, 0), stateLights.amber)
+  var transformer = Transformer(noteMatrix, looper, stateLights.red)
+
   looper.recorder.pipe(noteMatrix).on('data', function(data){
     control.queue(data)
   })
