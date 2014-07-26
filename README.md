@@ -25,7 +25,7 @@ var Soundbank = require('soundbank')
 var LaunchpadControl = require('midi-looper-launchpad')
 
 // set up some support components to make midi-looper work
-var audioContext = new webkitAudioContext()
+var audioContext = new AudioContext()
 var clock = Bopper(audioContext)
 var playback = Ditty(clock)
 var looper = MidiLooper(clock.getPosition)
