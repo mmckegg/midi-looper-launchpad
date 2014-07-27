@@ -20,31 +20,49 @@ module.exports = function(duplexPort, looper){
   var activeNotes = {}
   var currentPosition = 0
   var isSelecting = false
+
+  var offset = 0
   
   var control = Through(function(schedule){
+
+    var to = schedule.to + offset
+    var from = schedule.from + offset
+
     // bopper data
     var repeatLength = holder.getLength()
-    var currentRepeat = Math.floor(schedule.to / repeatLength) * repeatLength
+    var currentRepeat = Math.floor(to / repeatLength) * repeatLength
 
     var step = looper.getLength() / 8
-    var currentBeat = Math.floor(schedule.to / step) * step
+    var currentBeat = Math.floor(to / step) * step
 
-    if (currentBeat > schedule.from && currentBeat <= schedule.to){
+    if (currentBeat > from && currentBeat <= to){
       setDisplayPosition(currentBeat / step % 8)
     }
 
-    if (currentRepeat > schedule.from && currentRepeat <= schedule.to){
+    if (currentRepeat > from && currentRepeat <= to){
       holdButton.flash(stateLights.green, 20)
     }
 
-    var position = schedule.to - looper.getLength()
+    var position = to - looper.getLength()
     var currentNotes = recordingNotes
-    currentPosition = schedule.to
+    currentPosition = to
     recordingNotes = looper.recorder.getActiveNotes(position, looper.getLength())
     diff(recordingNotes, currentNotes).forEach(refreshButtonState)
     diff(currentNotes, recordingNotes).forEach(refreshButtonState)
     refreshLearnButton()
   })
+
+  control.setOffset = function(value){
+    value = parseFloat(value) || 0
+    if (offset !== value){
+      offset = value
+      control.emit('offset', value)
+    }
+  }
+
+  control.getOffset = function(){
+    return offset
+  }
 
   var controller = Controller(duplexPort)
 
